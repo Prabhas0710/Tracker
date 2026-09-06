@@ -3,14 +3,26 @@
 import { useEffect, useState } from "react";
 
 const SHOW_MS = 2000;
-const EXIT_MS = 320;
+const EXIT_MS = 350;
+const SEEN_KEY = "nutrifin-splash-seen";
 
-/** Full-screen NUTRIFIN intro shown for ~2s when the site opens. */
+/**
+ * NUTRIFIN intro — only on a fresh site/app open (once per browser tab session).
+ * Not shown again while navigating between pages in the same session.
+ */
 export default function NutrifinSplash() {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
+    try {
+      if (sessionStorage.getItem(SEEN_KEY)) return;
+      sessionStorage.setItem(SEEN_KEY, "1");
+    } catch {
+      /* private mode — still show once this mount */
+    }
+
+    setVisible(true);
     const exitAt = window.setTimeout(() => setExiting(true), SHOW_MS - EXIT_MS);
     const hideAt = window.setTimeout(() => setVisible(false), SHOW_MS);
     return () => {
@@ -28,15 +40,7 @@ export default function NutrifinSplash() {
       aria-live="polite"
       aria-label="NUTRIFIN"
     >
-      <div className="nutrifin-splash-glow" aria-hidden="true" />
-      <p className="nutrifin-splash-mark" aria-hidden="true">
-        {"NUTRIFIN".split("").map((letter, index) => (
-          <span key={`${letter}-${index}`} style={{ animationDelay: `${80 + index * 70}ms` }}>
-            {letter}
-          </span>
-        ))}
-      </p>
-      <span className="sr-only">NUTRIFIN</span>
+      <p className="nutrifin-splash-mark">NUTRIFIN</p>
     </div>
   );
 }
