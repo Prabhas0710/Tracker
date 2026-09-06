@@ -3,6 +3,7 @@ import { Fraunces, Manrope } from "next/font/google";
 import { Suspense } from "react";
 import AppSessionHome from "@/components/AppSessionHome";
 import GmailStatusDot from "@/components/GmailStatusDot";
+import NutrifinSplash from "@/components/NutrifinSplash";
 import ProfileButton from "@/components/ProfileButton";
 import TopTabs from "@/components/TopTabs";
 import "./globals.css";
@@ -67,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: homeOnRefreshScript }} />
       </head>
       <body suppressHydrationWarning>
+        <NutrifinSplash />
         <Suspense fallback={null}>
           <AppSessionHome />
         </Suspense>
