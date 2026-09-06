@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.agents.analytics_agent import AnalyticsAgent
 from app.database.database import get_db
 from app.services.analytics_service import AnalyticsService
 from app.services.category_service import CategoryService
@@ -34,10 +33,6 @@ def analytics_summary(
     diet = DietService(db).period_goal_stats(
         period_name, date=date, year=year, month=month
     )
-    if period_name == "month":
-        insight = AnalyticsAgent(db).monthly_insight(year, month).get("insight")
-        if insight:
-            summary["insight"] = insight
     return {**summary, "diet": diet}
 
 

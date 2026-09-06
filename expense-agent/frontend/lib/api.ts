@@ -160,6 +160,7 @@ export const api = {
       dashboard_total?: number;
       pending_clarifications?: number;
       message?: string;
+      busy?: boolean;
     }>(`/api/auth/gmail/sync${qs}`, { method: "POST" });
   },
   gmailDisconnect: (email?: string) =>

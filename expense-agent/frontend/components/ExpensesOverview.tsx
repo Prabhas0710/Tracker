@@ -185,8 +185,7 @@ export default function ExpensesOverview() {
     let alive = true;
     const refresh = async () => {
       if (!alive) return;
-      await loadSummary(year, month);
-      await loadExpenses(year, month);
+      await Promise.all([loadSummary(year, month), loadExpenses(year, month)]);
     };
     const pullMail = async () => {
       if (!alive) return;
@@ -197,16 +196,19 @@ export default function ExpensesOverview() {
         /* ignore */
       }
       try {
-        await api.gmailSync();
+        const result = await api.gmailSync();
+        if (result.busy) return;
       } catch {
         /* background sync will retry */
       }
       if (alive) await refresh();
     };
     void refresh();
-    void pullMail();
-    const refreshId = setInterval(refresh, 8000);
-    const syncId = setInterval(pullMail, 10000);
+    const mailTimer = window.setTimeout(() => {
+      void pullMail();
+    }, 1500);
+    const refreshId = setInterval(refresh, 12000);
+    const syncId = setInterval(pullMail, 45000);
     const openAsk = (event: Event) => {
       const item = (event as CustomEvent<{ expense_id?: number | null; merchant?: string | null }>).detail;
       setOpenCategory("Needs you");
@@ -215,6 +217,7 @@ export default function ExpensesOverview() {
     window.addEventListener("ledgerly-open-ask", openAsk);
     return () => {
       alive = false;
+      window.clearTimeout(mailTimer);
       clearInterval(refreshId);
       clearInterval(syncId);
       window.removeEventListener("ledgerly-open-ask", openAsk);
