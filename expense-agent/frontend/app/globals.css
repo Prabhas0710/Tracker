@@ -2137,6 +2137,142 @@ a {
   100% { transform: translateX(280%); }
 }
 
+.cook-loader {
+  display: grid;
+  justify-items: center;
+  gap: 0.55rem;
+  margin: 1.2rem 0 2rem;
+  padding: 1.7rem 1rem 1.45rem;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 50% 15%, rgba(255, 140, 66, 0.14), transparent 55%),
+    rgba(255, 255, 255, 0.02);
+  animation: rise 280ms ease both;
+  min-height: 14rem;
+  align-content: center;
+}
+
+.cook-loader-stage {
+  position: relative;
+  width: 7.2rem;
+  height: 5.4rem;
+  margin-bottom: 0.45rem;
+}
+
+.cook-pot {
+  position: absolute;
+  left: 50%;
+  bottom: 1.1rem;
+  width: 3.6rem;
+  height: 2.35rem;
+  margin-left: -1.8rem;
+}
+
+.cook-pot-body {
+  position: absolute;
+  inset: 0.35rem 0 0;
+  border-radius: 0.35rem 0.35rem 0.85rem 0.85rem;
+  border: 1.5px solid rgba(234, 245, 255, 0.45);
+  background: linear-gradient(180deg, rgba(180, 205, 230, 0.28), rgba(90, 120, 150, 0.22));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.cook-pot-body::before {
+  content: "";
+  position: absolute;
+  left: -0.25rem;
+  right: -0.25rem;
+  top: -0.28rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(234, 245, 255, 0.5);
+  background: rgba(160, 190, 220, 0.3);
+}
+
+.cook-pot-handle {
+  position: absolute;
+  right: -0.85rem;
+  top: 0.7rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1.5px solid rgba(234, 245, 255, 0.45);
+  border-left: 0;
+  border-radius: 0 999px 999px 0;
+}
+
+.cook-steam {
+  position: absolute;
+  bottom: 2.5rem;
+  width: 0.35rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  background: linear-gradient(to top, transparent, rgba(234, 245, 255, 0.55));
+  opacity: 0;
+  animation: cook-steam 1.4s ease-in-out infinite;
+}
+
+.cook-steam-a { left: 0.7rem; animation-delay: 0s; }
+.cook-steam-b { left: 1.55rem; animation-delay: 0.25s; height: 1.45rem; }
+.cook-steam-c { left: 2.4rem; animation-delay: 0.5s; }
+
+.cook-flame {
+  position: absolute;
+  bottom: 0.15rem;
+  width: 0.7rem;
+  height: 1rem;
+  border-radius: 50% 50% 45% 45%;
+  background: radial-gradient(circle at 50% 70%, #ffe08a, #ff7a2f 55%, transparent 70%);
+  filter: blur(0.2px);
+  animation: cook-flicker 0.55s ease-in-out infinite alternate;
+}
+
+.cook-flame-a { left: 2.1rem; animation-delay: 0s; }
+.cook-flame-b { left: 3rem; height: 1.2rem; animation-delay: 0.12s; }
+.cook-flame-c { left: 3.9rem; animation-delay: 0.24s; }
+
+.cook-loader-title {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.55rem, 5vw, 2rem);
+  letter-spacing: -0.02em;
+  color: #ffb078;
+  line-height: 1;
+}
+
+.cook-loader-label {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.cook-loader-bar {
+  width: min(12rem, 70%);
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin-top: 0.2rem;
+}
+
+.cook-loader-bar span {
+  display: block;
+  height: 100%;
+  width: 40%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, #ff9a55, transparent);
+  animation: cash-bar 1s ease-in-out infinite;
+}
+
+@keyframes cook-steam {
+  0% { opacity: 0; transform: translateY(8px) scaleY(0.6); }
+  35% { opacity: 0.85; }
+  100% { opacity: 0; transform: translateY(-18px) scaleY(1.15); }
+}
+
+@keyframes cook-flicker {
+  from { transform: scaleY(0.85) translateY(1px); opacity: 0.75; }
+  to { transform: scaleY(1.15) translateY(0); opacity: 1; }
+}
+
 @media (max-width: 520px) {
   .top-tab {
     padding: 0.34rem 0.5rem;
