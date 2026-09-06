@@ -74,6 +74,10 @@ class DietDayOut(BaseModel):
     date: str
     calorie_goal: float
     protein_goal: float
+    water_goal_ml: float = 3000.0
+    water_ml: float = 0.0
+    water_remaining_ml: float = 3000.0
+    hydrated: bool = False
     calories: float
     remaining: float
     protein: float
@@ -82,6 +86,12 @@ class DietDayOut(BaseModel):
     fat: float
     fiber: float
     meals: list[MealOut]
+
+
+class DietWaterUpdate(BaseModel):
+    date: Optional[str] = Field(default=None, description="YYYY-MM-DD IST")
+    add_ml: Optional[float] = Field(default=None, gt=0, le=5000)
+    water_ml: Optional[float] = Field(default=None, ge=0, le=20000)
 
 
 class DietMonthDayOut(BaseModel):

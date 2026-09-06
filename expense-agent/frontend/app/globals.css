@@ -2605,6 +2605,72 @@ a {
   background: var(--danger);
 }
 
+.diet-water-card {
+  margin-top: 0.75rem;
+}
+
+.diet-water-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.diet-water-card strong {
+  display: block;
+}
+
+.diet-water-goal {
+  font-size: 0.72em;
+  font-weight: 500;
+  opacity: 0.65;
+  margin-left: 0.15rem;
+}
+
+.diet-water-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.diet-water-add {
+  border: 1px solid rgba(92, 179, 255, 0.35);
+  background: rgba(92, 179, 255, 0.1);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.diet-water-add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.diet-water-bar {
+  margin-top: 0.55rem;
+}
+
+.diet-water-bar span {
+  background: linear-gradient(90deg, #3d8fd6, #5cb3ff);
+}
+
+.diet-card.is-hydrated {
+  border-color: rgba(31, 169, 113, 0.4);
+}
+
+.diet-card.is-hydrated strong,
+.diet-card.is-hydrated .diet-card-meta {
+  color: var(--ok);
+}
+
+.diet-card.is-hydrated .diet-water-bar span {
+  background: linear-gradient(90deg, #1fa971, #4ad39a);
+}
+
 .diet-macros {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

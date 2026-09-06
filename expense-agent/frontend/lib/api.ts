@@ -270,4 +270,26 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ calorie_goal, protein_goal }),
     }),
+  addDietWater: (add_ml: number, date?: string) =>
+    request<{
+      date: string;
+      water_ml: number;
+      water_goal_ml: number;
+      water_remaining_ml: number;
+      hydrated: boolean;
+    }>("/api/diet/water", {
+      method: "POST",
+      body: JSON.stringify({ add_ml, date }),
+    }),
+  setDietWater: (water_ml: number, date?: string) =>
+    request<{
+      date: string;
+      water_ml: number;
+      water_goal_ml: number;
+      water_remaining_ml: number;
+      hydrated: boolean;
+    }>("/api/diet/water", {
+      method: "POST",
+      body: JSON.stringify({ water_ml, date }),
+    }),
 };

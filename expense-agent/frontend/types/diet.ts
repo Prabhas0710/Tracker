@@ -29,6 +29,10 @@ export type DietDay = {
   date: string;
   calorie_goal: number;
   protein_goal: number;
+  water_goal_ml?: number;
+  water_ml?: number;
+  water_remaining_ml?: number;
+  hydrated?: boolean;
   calories: number;
   remaining: number;
   protein: number;

@@ -22,14 +22,20 @@ logger = get_logger(__name__)
 IST = ZoneInfo("Asia/Kolkata")
 GOAL_KEY = "diet_calorie_goal"
 PROTEIN_GOAL_KEY = "diet_protein_goal"
+WATER_GOAL_KEY = "diet_water_goal_ml"
 STREAK_BREAK_NOTIFIED_KEY = "diet_streak_break_notified_on"
 DEFAULT_GOAL = 2200.0
 DEFAULT_PROTEIN_GOAL = 120.0
+DEFAULT_WATER_GOAL_ML = 3000.0  # 3 liters
 # Miss the daily goal this many days in a row without breaking the streak.
 # Breaks on the next miss (more than two continuous miss days).
 STREAK_GRACE_MISS_DAYS = 2
 STREAK_LOOKBACK_DAYS = 400
 MEAL_TYPES = ("Breakfast", "Lunch", "Dinner", "Snack")
+
+
+def _water_pref_key(date_str: str) -> str:
+    return f"diet_water_ml:{date_str}"
 
 NL_SYSTEM = """You parse a meal log into JSON only:
 {
@@ -178,8 +184,16 @@ def day_hit_goal(
     protein: float,
     calorie_goal: float,
     protein_goal: float,
+    *,
+    water_ml: float = 0.0,
+    water_goal_ml: float = DEFAULT_WATER_GOAL_ML,
 ) -> bool:
-    return calories > 0 and calories <= calorie_goal and protein >= protein_goal
+    return (
+        calories > 0
+        and calories <= calorie_goal
+        and protein >= protein_goal
+        and water_ml >= water_goal_ml
+    )
 
 
 def compute_streak_days(
@@ -321,6 +335,47 @@ class DietService:
     def get_protein_goal(self) -> float:
         return self._get_pref_float(PROTEIN_GOAL_KEY, DEFAULT_PROTEIN_GOAL)
 
+    def get_water_goal_ml(self) -> float:
+        return self._get_pref_float(WATER_GOAL_KEY, DEFAULT_WATER_GOAL_ML)
+
+    def get_water_ml(self, date_str: str) -> float:
+        return self._get_pref_float(_water_pref_key(date_str), 0.0)
+
+    def set_water_ml(self, date_str: str, ml: float) -> float:
+        return self._set_pref_float(_water_pref_key(date_str), max(0.0, float(ml)))
+
+    def add_water_ml(self, date_str: str, add_ml: float) -> dict[str, Any]:
+        date_str = date_str or today_ist()
+        total = self.set_water_ml(date_str, self.get_water_ml(date_str) + float(add_ml))
+        goal = self.get_water_goal_ml()
+        return {
+            "date": date_str,
+            "water_ml": round(total, 1),
+            "water_goal_ml": goal,
+            "water_remaining_ml": round(goal - total, 1),
+            "hydrated": total >= goal,
+        }
+
+    def _water_map(self) -> dict[str, float]:
+        rows = (
+            self.db.query(UserPreference)
+            .filter(
+                UserPreference.user_id == self._user_id(),
+                UserPreference.key.like("diet_water_ml:%"),
+            )
+            .all()
+        )
+        out: dict[str, float] = {}
+        for row in rows:
+            day = (row.key or "").split(":", 1)[-1]
+            if not day:
+                continue
+            try:
+                out[day] = float(row.value)
+            except (TypeError, ValueError):
+                out[day] = 0.0
+        return out
+
     def set_goal(self, calories: float, protein: Optional[float] = None) -> dict[str, float]:
         cal = self._set_pref_float(GOAL_KEY, calories)
         if protein is not None:
@@ -349,10 +404,16 @@ class DietService:
         fiber = sum(float(m.fiber or 0) for m in meals)
         goal = self.get_goal()
         protein_goal = self.get_protein_goal()
+        water_goal = self.get_water_goal_ml()
+        water_ml = self.get_water_ml(date_str)
         return {
             "date": date_str,
             "calorie_goal": goal,
             "protein_goal": protein_goal,
+            "water_goal_ml": water_goal,
+            "water_ml": round(water_ml, 1),
+            "water_remaining_ml": round(water_goal - water_ml, 1),
+            "hydrated": water_ml >= water_goal,
             "calories": round(calories, 1),
             "remaining": round(goal - calories, 1),
             "protein": round(protein, 1),
@@ -372,6 +433,8 @@ class DietService:
             next_month = datetime(year, month + 1, 1, tzinfo=IST).astimezone(timezone.utc)
         calorie_goal = self.get_goal()
         protein_goal = self.get_protein_goal()
+        water_goal = self.get_water_goal_ml()
+        water_by_day = self._water_map()
 
         # Calendar stars for this month only.
         month_meals = (
@@ -399,6 +462,8 @@ class DietService:
                         total["protein"],
                         calorie_goal,
                         protein_goal,
+                        water_ml=water_by_day.get(day_key, 0.0),
+                        water_goal_ml=water_goal,
                     ),
                 }
             )
@@ -427,7 +492,14 @@ class DietService:
         hit_days = {
             day_key
             for day_key, total in streak_totals.items()
-            if day_hit_goal(total["calories"], total["protein"], calorie_goal, protein_goal)
+            if day_hit_goal(
+                total["calories"],
+                total["protein"],
+                calorie_goal,
+                protein_goal,
+                water_ml=water_by_day.get(day_key, 0.0),
+                water_goal_ml=water_goal,
+            )
         }
         streak = compute_streak_days(hit_days, today)
         if streak["streak_broken"] and streak.get("streak_ended_length"):
@@ -452,6 +524,8 @@ class DietService:
     ) -> dict[str, Any]:
         calorie_goal = self.get_goal()
         protein_goal = self.get_protein_goal()
+        water_goal = self.get_water_goal_ml()
+        water_by_day = self._water_map()
         start_utc = start.astimezone(timezone.utc)
         end_utc = end.astimezone(timezone.utc)
         meals = (
@@ -488,6 +562,8 @@ class DietService:
                 bucket["protein"],
                 calorie_goal,
                 protein_goal,
+                water_ml=water_by_day.get(key, 0.0),
+                water_goal_ml=water_goal,
             ):
                 hit_dates.append(key)
             else:

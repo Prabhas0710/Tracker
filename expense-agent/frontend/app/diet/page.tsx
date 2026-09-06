@@ -83,6 +83,12 @@ function CalendarIcon() {
   );
 }
 
+function liters(ml: number): string {
+  const value = ml / 1000;
+  const rounded = Math.round(value * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+}
+
 export default function DietPage() {
   const today = useMemo(() => todayIst(), []);
   const [date, setDate] = useState(today);
@@ -309,12 +315,42 @@ export default function DietPage() {
     }
   };
 
+  const onAddWater = async (addMl: number) => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await api.addDietWater(addMl, date);
+      setDay((prev) =>
+        prev
+          ? {
+              ...prev,
+              water_ml: result.water_ml,
+              water_goal_ml: result.water_goal_ml,
+              water_remaining_ml: result.water_remaining_ml,
+              hydrated: result.hydrated,
+            }
+          : prev,
+      );
+      await loadMonth(monthKeyFromDate(date));
+      setMessage(result.hydrated ? "Hydrated for today" : `+${addMl} ml water`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not log water");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const eaten = day?.calories ?? 0;
   const goal = day?.calorie_goal || 2200;
   const proteinEaten = day?.protein ?? 0;
   const proteinGoal = day?.protein_goal || 120;
+  const waterMl = day?.water_ml ?? 0;
+  const waterGoalMl = day?.water_goal_ml || 3000;
+  const hydrated = Boolean(day?.hydrated) || waterMl >= waterGoalMl;
   const calorieFill = Math.min(100, Math.round((eaten / goal) * 100));
   const proteinFill = Math.min(100, Math.round((proteinEaten / proteinGoal) * 100));
+  const waterFill = Math.min(100, Math.round((waterMl / waterGoalMl) * 100));
   const calorieOver = eaten > goal;
   const proteinOver = proteinEaten > proteinGoal;
   const streak = monthData?.streak_days ?? 0;
@@ -328,7 +364,7 @@ export default function DietPage() {
       <div className="diet-top">
         <div>
           <h2>Diet</h2>
-          <p className="lede">Log food. Track goals. Keep the streak.</p>
+          <p className="lede">Log food & water. Track goals. Keep the streak.</p>
         </div>
         <button
           type="button"
@@ -462,6 +498,38 @@ export default function DietPage() {
             </div>
           </article>
         </div>
+        <article className={`diet-card diet-water-card${hydrated ? " is-hydrated" : ""}`}>
+          <div className="diet-water-top">
+            <div>
+              <span className="diet-card-kicker">Water</span>
+              <strong>
+                {liters(waterMl)} L
+                <span className="diet-water-goal"> / {liters(waterGoalMl)} L</span>
+              </strong>
+              <span className="diet-card-meta">
+                {hydrated
+                  ? "Hydrated"
+                  : `${liters(Math.max(0, waterGoalMl - waterMl))} L left`}
+              </span>
+            </div>
+            <div className="diet-water-actions">
+              {[250, 500, 1000].map((ml) => (
+                <button
+                  key={ml}
+                  type="button"
+                  className="diet-water-add"
+                  disabled={busy}
+                  onClick={() => void onAddWater(ml)}
+                >
+                  +{ml >= 1000 ? "1 L" : `${ml} ml`}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="diet-bar diet-water-bar" aria-hidden="true">
+            <span style={{ width: `${waterFill}%` }} />
+          </div>
+        </article>
         <div className="diet-macros">
           <div>
             <span>Carbs</span>

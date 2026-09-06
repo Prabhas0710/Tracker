@@ -6,6 +6,7 @@ from app.schemas.diet_schema import (
     DietDayOut,
     DietGoalUpdate,
     DietMonthOut,
+    DietWaterUpdate,
     MealCreate,
     MealEstimateIn,
     MealEstimateOut,
@@ -13,7 +14,7 @@ from app.schemas.diet_schema import (
     MealOut,
     MealUpdate,
 )
-from app.services.diet_service import DietService
+from app.services.diet_service import DietService, today_ist
 
 router = APIRouter(prefix="/api/diet", tags=["diet"])
 
@@ -32,6 +33,29 @@ def get_month(
     db: Session = Depends(get_db),
 ):
     return DietService(db).list_month(month)
+
+
+@router.post("/water")
+def update_water(payload: DietWaterUpdate, db: Session = Depends(get_db)):
+    svc = DietService(db)
+    date_str = payload.date or today_ist()
+    if payload.water_ml is not None:
+        svc.set_water_ml(date_str, payload.water_ml)
+        goal = svc.get_water_goal_ml()
+        total = svc.get_water_ml(date_str)
+        result = {
+            "date": date_str,
+            "water_ml": round(total, 1),
+            "water_goal_ml": goal,
+            "water_remaining_ml": round(goal - total, 1),
+            "hydrated": total >= goal,
+        }
+    elif payload.add_ml is not None:
+        result = svc.add_water_ml(date_str, payload.add_ml)
+    else:
+        raise HTTPException(status_code=400, detail="Provide add_ml or water_ml")
+    db.commit()
+    return result
 
 
 @router.post("/estimate", response_model=MealEstimateOut)

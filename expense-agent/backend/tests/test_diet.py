@@ -35,6 +35,7 @@ def test_month_goal_star_marks_hit_days(db):
         ),
         source="manual",
     )
+    svc.set_water_ml("2026-08-18", 3000)
     svc.create(
         MealCreate(
             name="miss day",
@@ -52,6 +53,33 @@ def test_month_goal_star_marks_hit_days(db):
     hit_map = {item["date"]: item["hit_goal"] for item in month["days"]}
     assert hit_map["2026-08-18"] is True
     assert hit_map["2026-08-19"] is False
+
+
+def test_water_required_for_hit_day(db):
+    svc = DietService(db)
+    svc.set_goal(2200, 120)
+    svc.create(
+        MealCreate(
+            name="food only",
+            meal_type="Lunch",
+            calories=1800,
+            protein=130,
+            eaten_at=datetime(2026, 8, 20, tzinfo=timezone.utc),
+        ),
+        source="manual",
+    )
+    db.commit()
+    month = svc.list_month("2026-08")
+    hit_map = {item["date"]: item["hit_goal"] for item in month["days"]}
+    assert hit_map["2026-08-20"] is False
+    svc.add_water_ml("2026-08-20", 3000)
+    db.commit()
+    month = svc.list_month("2026-08")
+    hit_map = {item["date"]: item["hit_goal"] for item in month["days"]}
+    assert hit_map["2026-08-20"] is True
+    day = svc.list_day("2026-08-20")
+    assert day["hydrated"] is True
+    assert day["water_ml"] == 3000
 
 
 def test_streak_grace_keeps_count_for_two_miss_days():
@@ -108,6 +136,7 @@ def test_streak_calendar_stars_remain_after_break(db, monkeypatch):
             ),
             source="manual",
         )
+        svc.set_water_ml(f"2026-08-{day:02d}", 3000)
     db.commit()
     month = svc.list_month("2026-08")
     assert month["streak_days"] == 0
@@ -140,6 +169,7 @@ def test_period_goal_hit_and_miss_counts(db, monkeypatch):
         ),
         source="manual",
     )
+    svc.set_water_ml("2026-08-18", 3000)
     svc.create(
         MealCreate(
             name="miss",
