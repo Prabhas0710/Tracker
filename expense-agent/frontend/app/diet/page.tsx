@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { CookingLoader } from "@/components/CookingLoader";
 import { api } from "@/lib/api";
 import type { DietDay, DietMonth, MealEstimate, MealType } from "@/types/diet";
 
@@ -105,6 +106,7 @@ export default function DietPage() {
   const [monthData, setMonthData] = useState<DietMonth | null>(null);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const estimateSeq = useRef(0);
 
   const load = async (nextDate = date) => {
@@ -134,8 +136,27 @@ export default function DietPage() {
   };
 
   useEffect(() => {
-    void load(date);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let alive = true;
+    setPageLoading(true);
+    setDay(null);
+    (async () => {
+      try {
+        const data = await api.getDietDay(date);
+        if (!alive) return;
+        setDay(data);
+        setGoalDraft(String(Math.round(data.calorie_goal)));
+        setProteinGoalDraft(String(Math.round(data.protein_goal)));
+        setError(null);
+      } catch (err) {
+        if (!alive) return;
+        setError(err instanceof Error ? err.message : "Could not load diet");
+      } finally {
+        if (alive) setPageLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
   }, [date]);
 
   useEffect(() => {
@@ -408,6 +429,10 @@ export default function DietPage() {
       {error && <p className="error">{error}</p>}
       {message && <p className="ok">{message}</p>}
 
+      {pageLoading ? (
+        <CookingLoader />
+      ) : (
+      <>
       <div className="diet-snapshot">
         <div className="diet-progress">
           <article className={`diet-card${calorieOver ? " is-over" : ""}`}>
@@ -609,6 +634,8 @@ export default function DietPage() {
           );
         })}
       </div>
+      </>
+      )}
     </section>
   );
 }
