@@ -42,10 +42,28 @@ class GmailOAuthService:
             "response_type": "code",
             "scope": " ".join(GMAIL_SCOPES),
             "access_type": "offline",
+            "include_granted_scopes": "true",
             "prompt": "consent select_account",
             "state": state,
         }
         return f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+
+    @staticmethod
+    def _has_gmail_readonly(scope_value: str | None) -> bool:
+        text = (scope_value or "").lower()
+        return "gmail.readonly" in text
+
+    def _token_can_read_gmail(self, access_token: str) -> bool:
+        """Fallback when Google omits scopes from the token response."""
+        try:
+            with httpx.Client(timeout=20) as client:
+                response = client.get(
+                    "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                )
+            return response.status_code < 400
+        except Exception:  # noqa: BLE001
+            return False
 
     def exchange_code(self, code: str) -> dict[str, Any]:
         self.ensure_configured()
@@ -62,13 +80,20 @@ class GmailOAuthService:
             )
             response.raise_for_status()
             payload = response.json()
-        granted = (payload.get("scope") or "").split()
-        if "https://www.googleapis.com/auth/gmail.readonly" not in granted:
+        granted = payload.get("scope") or ""
+        access_token = payload.get("access_token") or ""
+        if not self._has_gmail_readonly(granted) and not (
+            access_token and self._token_can_read_gmail(access_token)
+        ):
             raise ValueError(
                 "Gmail readonly scope was not granted. "
                 "In Google Cloud → OAuth consent screen, add scope "
-                "gmail.readonly, then Connect Gmail again and allow mail access."
+                "gmail.readonly, add this email as a Test user if the app "
+                "is in Testing, then Connect Gmail again and allow mail access."
             )
+        if not self._has_gmail_readonly(granted) and access_token:
+            # Normalize so later status/sync logic sees the expected scope.
+            payload["scope"] = " ".join(GMAIL_SCOPES)
         return payload
 
     def fetch_user_email(self, access_token: str) -> Optional[str]:
