@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EditablePaymentItem } from "@/components/EditablePaymentItem";
+import { CashCountLoader } from "@/components/CashCountLoader";
 import { WheelColumn, WheelSheet } from "@/components/WheelPicker";
 import { api } from "@/lib/api";
 import {
@@ -129,6 +130,7 @@ export default function ExpensesOverview() {
   const [draftYear, setDraftYear] = useState(todayIst.year);
   const [draftMonth, setDraftMonth] = useState(todayIst.month);
   const [draftDay, setDraftDay] = useState<number | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const loadSummary = async (y = year, m = month) => {
     try {
@@ -186,10 +188,24 @@ export default function ExpensesOverview() {
 
   useEffect(() => {
     let alive = true;
+    setPageLoading(true);
+    setSummary(null);
+    setExpenses([]);
+    setOpenCategory(null);
+    setOpenAllSpend(false);
+    setOpenCredits(false);
+    setEditingExpenseId(null);
+
     const refresh = async () => {
       if (!alive) return;
       await Promise.all([loadSummary(year, month), loadExpenses(year, month)]);
     };
+
+    const initialLoad = async () => {
+      await refresh();
+      if (alive) setPageLoading(false);
+    };
+
     const pullMail = async () => {
       if (!alive) return;
       try {
@@ -206,7 +222,7 @@ export default function ExpensesOverview() {
       }
       if (alive) await refresh();
     };
-    void refresh();
+    void initialLoad();
     const mailTimer = window.setTimeout(() => {
       void pullMail();
     }, 1500);
@@ -225,6 +241,7 @@ export default function ExpensesOverview() {
       clearInterval(syncId);
       window.removeEventListener("ledgerly-open-ask", openAsk);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month]);
 
   const toggleExpenseEdit = (expenseId: number) => {
@@ -522,6 +539,10 @@ export default function ExpensesOverview() {
         </button>
       )}
 
+      {pageLoading ? (
+        <CashCountLoader />
+      ) : (
+      <>
       <div className={`spend-hero${openAllSpend ? " is-open" : ""}`}>
         <button
           type="button"
@@ -835,6 +856,8 @@ export default function ExpensesOverview() {
           )}
         </div>
       </div>
+      </>
+      )}
     </section>
   );
 }
