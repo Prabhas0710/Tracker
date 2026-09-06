@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ChatAttachFab, { type AttachKind } from "@/components/ChatAttachFab";
 import { api } from "@/lib/api";
+import { signalNutrifinReady } from "@/lib/nutrifinReady";
 import type { ChatMessage } from "@/types/analytics";
 
 type Message = ChatMessage;
@@ -112,6 +113,7 @@ export default function ChatHome() {
         /* offline or first visit */
       } finally {
         setLoading(false);
+        signalNutrifinReady();
       }
     };
     void load();
@@ -342,8 +344,6 @@ export default function ChatHome() {
         </div>
       )}
       <div className={`chat-stage${hasUserMessages && !showVoiceStage ? " has-thread" : ""}`}>
-        {loading && <p className="chat-hero muted">Loading…</p>}
-
         {showVoiceStage && (
           <div className="chat-voice-stage" aria-live="polite">
             <div className="chat-voice-rings" aria-hidden="true">

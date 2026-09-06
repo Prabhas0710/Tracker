@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-const SHOW_MS = 2000;
-const EXIT_MS = 350;
+const EXIT_MS = 380;
+const MIN_MS = 1200;
+const MAX_MS = 15000;
 const SEEN_KEY = "nutrifin-splash-seen";
 
 /**
- * NUTRIFIN intro — only on a fresh site/app open (once per browser tab session).
- * Not shown again while navigating between pages in the same session.
+ * Full-screen NUTRIFIN intro on a fresh site/app open only.
+ * Stays until the first page signals ready (or max timeout).
  */
 export default function NutrifinSplash() {
   const [visible, setVisible] = useState(false);
@@ -19,15 +20,42 @@ export default function NutrifinSplash() {
       if (sessionStorage.getItem(SEEN_KEY)) return;
       sessionStorage.setItem(SEEN_KEY, "1");
     } catch {
-      /* private mode — still show once this mount */
+      /* still show once this mount */
     }
 
     setVisible(true);
-    const exitAt = window.setTimeout(() => setExiting(true), SHOW_MS - EXIT_MS);
-    const hideAt = window.setTimeout(() => setVisible(false), SHOW_MS);
+
+    let ready = false;
+    let minDone = false;
+    let closed = false;
+
+    const close = () => {
+      if (closed) return;
+      closed = true;
+      setExiting(true);
+      window.setTimeout(() => setVisible(false), EXIT_MS);
+    };
+
+    const tryClose = () => {
+      if (ready && minDone) close();
+    };
+
+    const onReady = () => {
+      ready = true;
+      tryClose();
+    };
+
+    window.addEventListener("nutrifin-ready", onReady);
+    const minTimer = window.setTimeout(() => {
+      minDone = true;
+      tryClose();
+    }, MIN_MS);
+    const maxTimer = window.setTimeout(close, MAX_MS);
+
     return () => {
-      window.clearTimeout(exitAt);
-      window.clearTimeout(hideAt);
+      window.removeEventListener("nutrifin-ready", onReady);
+      window.clearTimeout(minTimer);
+      window.clearTimeout(maxTimer);
     };
   }, []);
 

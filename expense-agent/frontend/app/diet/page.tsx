@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { CookingLoader } from "@/components/CookingLoader";
 import { api } from "@/lib/api";
+import { signalNutrifinReady } from "@/lib/nutrifinReady";
 import type { DietDay, DietMonth, MealEstimate, MealType } from "@/types/diet";
 
 const MEAL_TYPES: MealType[] = ["Breakfast", "Lunch", "Dinner", "Snack"];
@@ -151,7 +152,10 @@ export default function DietPage() {
         if (!alive) return;
         setError(err instanceof Error ? err.message : "Could not load diet");
       } finally {
-        if (alive) setPageLoading(false);
+        if (alive) {
+          setPageLoading(false);
+          signalNutrifinReady();
+        }
       }
     })();
     return () => {

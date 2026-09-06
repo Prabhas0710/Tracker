@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { EditablePaymentItem } from "@/components/EditablePaymentItem";
 import { CashCountLoader } from "@/components/CashCountLoader";
+import { EditablePaymentItem } from "@/components/EditablePaymentItem";
 import { WheelColumn, WheelSheet } from "@/components/WheelPicker";
 import { api } from "@/lib/api";
+import { signalNutrifinReady } from "@/lib/nutrifinReady";
 import {
   categorySelectionPayload,
   displayCategoryName,
@@ -203,7 +204,10 @@ export default function ExpensesOverview() {
 
     const initialLoad = async () => {
       await refresh();
-      if (alive) setPageLoading(false);
+      if (alive) {
+        setPageLoading(false);
+        signalNutrifinReady();
+      }
     };
 
     const pullMail = async () => {
