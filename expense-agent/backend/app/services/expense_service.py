@@ -145,6 +145,18 @@ class ExpenseService:
         self.db.flush()
         return expense
 
+    def delete(self, expense_id: int, user_id: Optional[int] = None) -> bool:
+        expense = self.get(expense_id, user_id=user_id)
+        if not expense:
+            return False
+        if expense.transaction_id:
+            txn = self.db.get(Transaction, expense.transaction_id)
+            if txn:
+                txn.status = "ignored"
+        self.db.delete(expense)
+        self.db.flush()
+        return True
+
     def _reference_for(self, expense: Expense) -> tuple[Optional[str], Optional[str]]:
         txn = expense.transaction
         if not txn and expense.transaction_id:

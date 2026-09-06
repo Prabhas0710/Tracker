@@ -248,6 +248,45 @@ export default function ExpensesOverview() {
     }
   };
 
+  const deleteExpense = async (expense: Expense) => {
+    if (categoryBusy) return;
+    setCategoryBusy(true);
+    setError(null);
+    try {
+      await api.deleteExpense(expense.id);
+      setExpenses((rows) => rows.filter((row) => row.id !== expense.id));
+      if (editingExpenseId === expense.id) setEditingExpenseId(null);
+      await loadSummary(year, month);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete transaction");
+    } finally {
+      setCategoryBusy(false);
+    }
+  };
+
+  const convertExpenseDirection = async (
+    expense: Expense,
+    next: "debit" | "credit",
+  ) => {
+    if (categoryBusy) return;
+    setCategoryBusy(true);
+    setError(null);
+    try {
+      const updated = await api.updateExpense(expense.id, {
+        direction: next,
+        category: next === "credit" ? "Income" : expense.category === "Income" ? "Other" : expense.category,
+        subcategory: next === "credit" ? null : expense.subcategory ?? null,
+      });
+      setExpenses((rows) => rows.map((row) => (row.id === updated.id ? updated : row)));
+      await loadSummary(year, month);
+      setEditingExpenseId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update transaction");
+    } finally {
+      setCategoryBusy(false);
+    }
+  };
+
   const isCurrentMonth = year === todayIst.year && month === todayIst.month;
   const monthShort = MONTH_SHORT[month - 1] || "";
 
@@ -593,6 +632,9 @@ export default function ExpensesOverview() {
                             isOpen={editingExpenseId === expense.id}
                             onToggle={() => toggleExpenseEdit(expense.id)}
                             onCategorySelect={(cat) => updateExpenseCategory(expense, cat)}
+                            onDelete={() => void deleteExpense(expense)}
+                            onMakeIncome={() => void convertExpenseDirection(expense, "credit")}
+                            onMakeExpense={() => void convertExpenseDirection(expense, "debit")}
                             disabled={categoryBusy}
                             footer={
                               ccSpendBucket(expense, year, month, summary) === "due"
@@ -617,6 +659,9 @@ export default function ExpensesOverview() {
                         isOpen={editingExpenseId === expense.id}
                         onToggle={() => toggleExpenseEdit(expense.id)}
                         onCategorySelect={(cat) => updateExpenseCategory(expense, cat)}
+                        onDelete={() => void deleteExpense(expense)}
+                        onMakeIncome={() => void convertExpenseDirection(expense, "credit")}
+                        onMakeExpense={() => void convertExpenseDirection(expense, "debit")}
                         disabled={categoryBusy}
                       />
                     ))}
@@ -648,6 +693,9 @@ export default function ExpensesOverview() {
                           isOpen={editingExpenseId === expense.id}
                           onToggle={() => toggleExpenseEdit(expense.id)}
                           onCategorySelect={(category) => updateExpenseCategory(expense, category)}
+                          onDelete={() => void deleteExpense(expense)}
+                          onMakeIncome={() => void convertExpenseDirection(expense, "credit")}
+                          onMakeExpense={() => void convertExpenseDirection(expense, "debit")}
                           disabled={categoryBusy}
                           amountClassName="ok"
                           amountPrefix="+"

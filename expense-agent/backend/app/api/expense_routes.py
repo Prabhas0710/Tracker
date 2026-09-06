@@ -68,6 +68,15 @@ def update_expense(expense_id: int, payload: ExpenseUpdate, db: Session = Depend
     return ExpenseService(db).to_out(expense)
 
 
+@router.delete("/{expense_id}")
+def delete_expense(expense_id: int, db: Session = Depends(get_db)):
+    deleted = ExpenseService(db).delete(expense_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    db.commit()
+    return {"deleted": True, "id": expense_id}
+
+
 @router.get("/{expense_id}", response_model=ExpenseOut)
 def get_expense(expense_id: int, db: Session = Depends(get_db)):
     expense = ExpenseService(db).get(expense_id)

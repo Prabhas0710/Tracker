@@ -120,6 +120,10 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
+  deleteExpense: (id: number) =>
+    request<{ deleted: boolean; id: number }>(`/api/expenses/${id}`, {
+      method: "DELETE",
+    }),
   mockPayment: (body: Record<string, unknown>) =>
     request<IngestResult>("/api/payments/mock", {
       method: "POST",

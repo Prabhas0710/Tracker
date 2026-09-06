@@ -641,6 +641,56 @@ a {
   animation: rise 220ms ease both;
 }
 
+.payment-swipe {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.payment-swipe-actions {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  pointer-events: none;
+}
+
+.payment-swipe-btn {
+  width: 88px;
+  border: 0;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.payment-swipe-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.payment-swipe-btn.is-income {
+  background: #1fa971;
+}
+
+.payment-swipe-btn.is-delete {
+  background: #d15b4d;
+  margin-left: auto;
+}
+
+.payment-swipe-front {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-1);
+  touch-action: pan-y;
+  transition: transform 160ms ease;
+  will-change: transform;
+}
+
 .payment-item {
   display: flex;
   justify-content: space-between;
