@@ -122,6 +122,8 @@ export default function ExpensesOverview() {
   const [paymentFilter, setPaymentFilter] = useState<"all" | "credit-card" | "debit">("all");
   const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
   const [categoryBusy, setCategoryBusy] = useState(false);
+  const [markPaidBank, setMarkPaidBank] = useState<CardBank | null>(null);
+  const [markPaidBusy, setMarkPaidBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [draftYear, setDraftYear] = useState(todayIst.year);
   const [draftMonth, setDraftMonth] = useState(todayIst.month);
@@ -285,6 +287,33 @@ export default function ExpensesOverview() {
     } finally {
       setCategoryBusy(false);
     }
+  };
+
+  const markCreditCardPaid = async (bank: CardBank) => {
+    if (markPaidBusy) return;
+    setMarkPaidBusy(true);
+    setError(null);
+    try {
+      await api.markCreditCardPaid(bank);
+      setMarkPaidBank(null);
+      await loadSummary(year, month);
+      await loadExpenses(year, month);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Could not mark ${bank} as paid`);
+    } finally {
+      setMarkPaidBusy(false);
+    }
+  };
+
+  const ccFooter = (expense: Expense) => {
+    const bucket = ccSpendBucket(expense, year, month, summary);
+    if (bucket === "due") {
+      return <div className="muted payment-paid-tag">Already paid</div>;
+    }
+    if (bucket === "current") {
+      return <div className="muted payment-paid-tag">Unbilled</div>;
+    }
+    return undefined;
   };
 
   const isCurrentMonth = year === todayIst.year && month === todayIst.month;
@@ -495,7 +524,9 @@ export default function ExpensesOverview() {
 
       <aside className="cc-due-panel cc-due-panel-top" aria-label="Credit card dues">
         <h3 className="cc-due-title">To pay next bill</h3>
-        <p className="muted cc-due-sub">Current cycle · after last bill paid</p>
+        <p className="muted cc-due-sub">
+          ICICI closes on the 6th · HDFC on the 1st · tap amount to mark paid
+        </p>
         <div className="cc-due-total">
           <span>Total credit bill</span>
           <strong>
@@ -512,12 +543,28 @@ export default function ExpensesOverview() {
             const row = summary?.credit_card_banks?.[bank];
             const alreadyPaid = row?.due_amount ?? 0;
             const toPay = row?.cycle_spent ?? 0;
+            const unbilled = row?.unbilled_amount ?? 0;
+            const expanded = markPaidBank === bank;
+            const statementDay = row?.statement_day ?? (bank === "ICICI" ? 6 : 1);
             return (
-              <div key={bank} className="cc-due-card">
-                <div className="row cc-due-main" style={{ borderBottom: 0, padding: "0.35rem 0" }}>
-                  <span>{bank}</span>
-                  <strong className="cc-due-amount">{formatINR(toPay)}</strong>
-                </div>
+              <div key={bank} className={`cc-due-card${expanded ? " is-expanded" : ""}`}>
+                <button
+                  type="button"
+                  className="cc-due-tap"
+                  onClick={() => setMarkPaidBank((cur) => (cur === bank ? null : bank))}
+                  aria-expanded={expanded}
+                >
+                  <div className="row cc-due-main" style={{ borderBottom: 0, padding: "0.35rem 0" }}>
+                    <span>{bank}</span>
+                    <strong className="cc-due-amount">{formatINR(toPay)}</strong>
+                  </div>
+                </button>
+                {unbilled > 0 && (
+                  <p className="muted cc-due-settled">
+                    Unbilled after {statementDay}
+                    {statementDay === 1 ? "st" : "th"}: {formatINR(unbilled)}
+                  </p>
+                )}
                 {alreadyPaid > 0 && row?.bill_paid_at && (
                   <p className="muted cc-due-settled">
                     Already paid: {formatINR(alreadyPaid)}
@@ -538,6 +585,24 @@ export default function ExpensesOverview() {
                     })}
                     {row.bill_amount ? ` · ${formatINR(row.bill_amount)}` : ""}
                   </p>
+                )}
+                {expanded && (
+                  <div className="cc-mark-paid">
+                    <p className="muted cc-mark-paid-hint">
+                      {bank === "ICICI"
+                        ? "Marks spends through the 5th (midnight) as billed; from the 6th stays unbilled."
+                        : "Marks spends through previous month end as billed; from the 1st stays unbilled."}{" "}
+                      Gmail payment mails do this automatically.
+                    </p>
+                    <button
+                      type="button"
+                      className="cc-mark-paid-btn"
+                      disabled={markPaidBusy}
+                      onClick={() => void markCreditCardPaid(bank)}
+                    >
+                      {markPaidBusy ? "Saving…" : `Mark ${bank} as paid`}
+                    </button>
+                  </div>
                 )}
               </div>
             );
@@ -636,11 +701,7 @@ export default function ExpensesOverview() {
                             onMakeIncome={() => void convertExpenseDirection(expense, "credit")}
                             onMakeExpense={() => void convertExpenseDirection(expense, "debit")}
                             disabled={categoryBusy}
-                            footer={
-                              ccSpendBucket(expense, year, month, summary) === "due"
-                                ? <div className="muted payment-paid-tag">Already paid</div>
-                                : undefined
-                            }
+                            footer={ccFooter(expense)}
                           />
                         ))}
                       </div>

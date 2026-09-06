@@ -15,11 +15,14 @@ export type AnalyticsSummary = {
     string,
     {
       bank?: string;
+      statement_day?: number;
       cycle_start_at?: string | null;
+      bill_closes_at?: string | null;
       bill_paid_at?: string | null;
       bill_amount?: number | null;
       card_suffix?: string | null;
       cycle_spent?: number;
+      unbilled_amount?: number;
       due_amount?: number;
     }
   >;

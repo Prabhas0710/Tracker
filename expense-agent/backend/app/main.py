@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import (
     analytics_router,
     chat_router,
+    credit_card_router,
     diet_router,
     expense_router,
     gmail_router,
@@ -56,6 +57,7 @@ def create_app() -> FastAPI:
     app.include_router(diet_router)
     app.include_router(analytics_router)
     app.include_router(chat_router)
+    app.include_router(credit_card_router)
     app.include_router(gmail_router)
     app.include_router(voice_router)
 

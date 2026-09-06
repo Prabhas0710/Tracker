@@ -157,15 +157,29 @@ def test_hdfc_cc_issuer_and_suffix():
 
 def test_icici_bill_payment_parses_cycle_anchor():
     from app.services.bank_email_parser import is_cc_bill_payment_email, parse_cc_bill_payment
-    from app.services.credit_card_cycle_service import cycle_start_after_payment
+    from app.services.credit_card_cycle_service import cycle_start_for_bank_payment
 
     assert is_cc_bill_payment_email("Payment received on your ICICI Bank Credit Card.", ICICI_BILL_PAYMENT)
     bill = parse_cc_bill_payment(ICICI_BILL_PAYMENT)
     assert bill["amount"] == 12771.91
     assert bill["account_suffix"] == "1007"
-    cycle = cycle_start_after_payment(bill["paid_at"])
-    assert cycle.day == 7
+    cycle = cycle_start_for_bank_payment("ICICI", bill["paid_at"])
+    assert cycle.day == 6
     assert cycle.month == 8
+
+
+def test_hdfc_statement_cycle_on_first():
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from app.services.credit_card_cycle_service import cycle_start_for_bank_payment
+
+    ist = ZoneInfo("Asia/Kolkata")
+    paid = datetime(2026, 9, 6, 12, 0, tzinfo=ist)
+    cycle = cycle_start_for_bank_payment("HDFC", paid)
+    assert cycle.day == 1
+    assert cycle.month == 9
+    assert cycle.year == 2026
 
 
 def test_icici_bill_payment_requires_reference():

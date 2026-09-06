@@ -981,6 +981,59 @@ a {
   color: var(--accent);
 }
 
+.cc-due-tap {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.cc-due-tap:active .cc-due-amount {
+  opacity: 0.75;
+}
+
+.cc-due-card.is-expanded {
+  background: rgba(243, 239, 230, 0.04);
+  border-radius: 12px;
+  padding: 0.35rem 0.55rem 0.55rem;
+  margin: 0 -0.35rem;
+}
+
+.cc-mark-paid {
+  margin-top: 0.45rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.cc-mark-paid-hint {
+  font-size: 0.72rem;
+  margin: 0;
+  line-height: 1.35;
+  opacity: 0.75;
+}
+
+.cc-mark-paid-btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  background: var(--accent);
+  color: #111;
+  font-weight: 650;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.cc-mark-paid-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .cc-due-settled {
   font-size: 0.72rem;
   margin: 0.2rem 0 0;

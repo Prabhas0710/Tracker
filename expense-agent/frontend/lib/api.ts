@@ -124,6 +124,21 @@ export const api = {
     request<{ deleted: boolean; id: number }>(`/api/expenses/${id}`, {
       method: "DELETE",
     }),
+  markCreditCardPaid: (
+    bank: "ICICI" | "HDFC",
+    body?: { paid_at?: string; amount?: number },
+  ) =>
+    request<{
+      bank: string;
+      statement_day?: number;
+      cycle_start_at?: string | null;
+      bill_paid_at?: string | null;
+      bill_amount?: number | null;
+      marked_amount?: number;
+    }>(`/api/credit-cards/${bank}/mark-paid`, {
+      method: "POST",
+      body: JSON.stringify(body || {}),
+    }),
   mockPayment: (body: Record<string, unknown>) =>
     request<IngestResult>("/api/payments/mock", {
       method: "POST",

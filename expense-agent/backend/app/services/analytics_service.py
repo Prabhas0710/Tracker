@@ -61,6 +61,7 @@ class AnalyticsService:
             bank: {
                 **cycle_svc.get_bank_cycle_info(bank, user_id=user_id),
                 "cycle_spent": 0.0,
+                "unbilled_amount": 0.0,
                 "due_amount": 0.0,
             }
             for bank in SUPPORTED_BANKS
@@ -73,11 +74,15 @@ class AnalyticsService:
             if not bank:
                 continue
             cycle_start = cycle_svc.get_cycle_start(bank, user_id=user_id)
-            bucket = classify_cc_spend_in_month(expense.spent_at, start, end, cycle_start)
+            bucket = classify_cc_spend_in_month(
+                expense.spent_at, start, end, cycle_start, bank=bank
+            )
             amount = float(expense.amount)
-            if bucket == "current":
+            if bucket == "bill":
                 bank_stats[bank]["cycle_spent"] += amount
                 cycle_spent_total += amount
+            elif bucket == "current":
+                bank_stats[bank]["unbilled_amount"] += amount
             else:
                 bank_stats[bank]["due_amount"] += amount
                 due_total += amount
