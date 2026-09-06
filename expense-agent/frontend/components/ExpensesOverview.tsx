@@ -118,6 +118,7 @@ export default function ExpensesOverview() {
   const [gmailNote, setGmailNote] = useState<string | null>(null);
   const [gmailBusy, setGmailBusy] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
+  const [openAllSpend, setOpenAllSpend] = useState(false);
   const [openCredits, setOpenCredits] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState<"all" | "credit-card" | "debit">("all");
   const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
@@ -340,6 +341,7 @@ export default function ExpensesOverview() {
     if (draftYear !== year || draftMonth !== month) {
       setExpenses([]);
       setOpenCategory(null);
+      setOpenAllSpend(false);
       setOpenCredits(false);
     }
     setYear(draftYear);
@@ -403,6 +405,16 @@ export default function ExpensesOverview() {
       .reduce((sum, expense) => sum + expense.amount, 0);
   }, [day, expenses, year, month, summary]);
 
+  const allSpendExpenses = useMemo(() => {
+    return expenses
+      .filter(
+        (expense) =>
+          inSelectedPeriod(expense.spent_at, year, month, day) &&
+          (expense.direction || "debit") === "debit",
+      )
+      .sort((a, b) => +new Date(b.spent_at) - +new Date(a.spent_at));
+  }, [expenses, year, month, day]);
+
   const spendRows = useMemo(() => {
     return Array.from(expensesByCategory.entries())
       .map(([category, items]) => ({
@@ -425,7 +437,14 @@ export default function ExpensesOverview() {
   const netTotal = creditsTotal - debtsTotal;
 
   const toggleCategory = (category: string) => {
+    setOpenAllSpend(false);
     setOpenCategory((current) => (current === category ? null : category));
+  };
+
+  const toggleAllSpend = () => {
+    setOpenCategory(null);
+    setOpenCredits(false);
+    setOpenAllSpend((open) => !open);
   };
 
   return (
@@ -494,6 +513,7 @@ export default function ExpensesOverview() {
             setMonth(todayIst.month);
             setDay(null);
             setOpenCategory(null);
+            setOpenAllSpend(false);
             setOpenCredits(false);
             setEditingExpenseId(null);
           }}
@@ -502,10 +522,49 @@ export default function ExpensesOverview() {
         </button>
       )}
 
-      <div className="metric">{formatINR(debtsTotal)}</div>
+      <button
+        type="button"
+        className={`metric metric-tap${openAllSpend ? " is-open" : ""}`}
+        onClick={toggleAllSpend}
+        aria-expanded={openAllSpend}
+      >
+        {formatINR(debtsTotal)}
+      </button>
       <p className="muted spend-caption">
         Spent {day == null ? "this month" : "this day"}
+        {allSpendExpenses.length > 0 ? " · tap to see all" : ""}
       </p>
+
+      {openAllSpend && (
+        <div className="all-spend-panel">
+          <div className="all-spend-head">
+            <span>
+              {allSpendExpenses.length} transaction{allSpendExpenses.length === 1 ? "" : "s"}
+            </span>
+            <strong>{formatINR(debtsTotal)}</strong>
+          </div>
+          {allSpendExpenses.length === 0 ? (
+            <p className="muted empty-state">No transactions this period.</p>
+          ) : (
+            <div className="payment-list all-spend-list">
+              {allSpendExpenses.map((expense) => (
+                <EditablePaymentItem
+                  key={expense.id}
+                  expense={expense}
+                  isOpen={editingExpenseId === expense.id}
+                  onToggle={() => toggleExpenseEdit(expense.id)}
+                  onCategorySelect={(cat) => updateExpenseCategory(expense, cat)}
+                  onDelete={() => void deleteExpense(expense)}
+                  onMakeIncome={() => void convertExpenseDirection(expense, "credit")}
+                  onMakeExpense={() => void convertExpenseDirection(expense, "debit")}
+                  disabled={categoryBusy}
+                  footer={ccFooter(expense)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="snapshot">
         <div>
@@ -615,21 +674,21 @@ export default function ExpensesOverview() {
           <button
             type="button"
             className={`payment-filter-btn${paymentFilter === "all" ? " active" : ""}`}
-            onClick={() => { setPaymentFilter("all"); setOpenCategory(null); }}
+            onClick={() => { setPaymentFilter("all"); setOpenCategory(null); setOpenAllSpend(false); }}
           >
             All
           </button>
           <button
             type="button"
             className={`payment-filter-btn${paymentFilter === "debit" ? " active" : ""}`}
-            onClick={() => { setPaymentFilter("debit"); setOpenCategory(null); }}
+            onClick={() => { setPaymentFilter("debit"); setOpenCategory(null); setOpenAllSpend(false); }}
           >
             Bank & UPI
           </button>
           <button
             type="button"
             className={`payment-filter-btn${paymentFilter === "credit-card" ? " active" : ""}`}
-            onClick={() => { setPaymentFilter("credit-card"); setOpenCategory(null); }}
+            onClick={() => { setPaymentFilter("credit-card"); setOpenCategory(null); setOpenAllSpend(false); }}
           >
             Cards
           </button>
