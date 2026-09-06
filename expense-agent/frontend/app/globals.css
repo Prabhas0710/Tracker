@@ -496,32 +496,44 @@ a {
   font-family: var(--font-display), serif;
   font-size: clamp(2.4rem, 8vw, 3.4rem);
   letter-spacing: -0.03em;
+  display: block;
+  line-height: 1.05;
 }
 
-.metric-tap {
-  display: block;
-  width: fit-content;
-  max-width: 100%;
+.spend-hero {
+  margin: 0 0 0.35rem;
+}
+
+.spend-hero-tap {
+  display: grid;
+  gap: 0.15rem;
+  width: 100%;
   margin: 0;
-  padding: 0;
+  padding: 0.15rem 0 0.35rem;
   border: 0;
   background: transparent;
   color: inherit;
   text-align: left;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 10px;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.metric-tap:active {
-  opacity: 0.75;
+.spend-hero-tap:active {
+  opacity: 0.8;
 }
 
-.metric-tap.is-open {
+.spend-hero.is-open .metric {
   color: var(--accent);
 }
 
+.spend-hero .spend-caption {
+  margin: 0;
+  display: block;
+}
+
 .all-spend-panel {
-  margin: 0.35rem 0 0.85rem;
+  margin: 0.45rem 0 0.65rem;
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 0.75rem 0.85rem 0.35rem;
@@ -540,7 +552,7 @@ a {
 
 .all-spend-list {
   padding: 0 0 0.5rem;
-  max-height: min(60vh, 28rem);
+  max-height: min(70vh, 34rem);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }

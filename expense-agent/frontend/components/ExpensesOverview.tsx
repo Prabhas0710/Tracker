@@ -522,49 +522,55 @@ export default function ExpensesOverview() {
         </button>
       )}
 
-      <button
-        type="button"
-        className={`metric metric-tap${openAllSpend ? " is-open" : ""}`}
-        onClick={toggleAllSpend}
-        aria-expanded={openAllSpend}
-      >
-        {formatINR(debtsTotal)}
-      </button>
-      <p className="muted spend-caption">
-        Spent {day == null ? "this month" : "this day"}
-        {allSpendExpenses.length > 0 ? " · tap to see all" : ""}
-      </p>
+      <div className={`spend-hero${openAllSpend ? " is-open" : ""}`}>
+        <button
+          type="button"
+          className="spend-hero-tap"
+          onClick={toggleAllSpend}
+          aria-expanded={openAllSpend}
+        >
+          <span className="metric">{formatINR(debtsTotal)}</span>
+          <span className="muted spend-caption">
+            Spent {day == null ? "this month" : "this day"}
+            {" · "}
+            {openAllSpend ? "tap to hide" : "tap for all transactions"}
+          </span>
+        </button>
 
-      {openAllSpend && (
-        <div className="all-spend-panel">
-          <div className="all-spend-head">
-            <span>
-              {allSpendExpenses.length} transaction{allSpendExpenses.length === 1 ? "" : "s"}
-            </span>
-            <strong>{formatINR(debtsTotal)}</strong>
-          </div>
-          {allSpendExpenses.length === 0 ? (
-            <p className="muted empty-state">No transactions this period.</p>
-          ) : (
-            <div className="payment-list all-spend-list">
-              {allSpendExpenses.map((expense) => (
-                <EditablePaymentItem
-                  key={expense.id}
-                  expense={expense}
-                  isOpen={editingExpenseId === expense.id}
-                  onToggle={() => toggleExpenseEdit(expense.id)}
-                  onCategorySelect={(cat) => updateExpenseCategory(expense, cat)}
-                  onDelete={() => void deleteExpense(expense)}
-                  onMakeIncome={() => void convertExpenseDirection(expense, "credit")}
-                  onMakeExpense={() => void convertExpenseDirection(expense, "debit")}
-                  disabled={categoryBusy}
-                  footer={ccFooter(expense)}
-                />
-              ))}
+        {openAllSpend && (
+          <div className="all-spend-panel">
+            <div className="all-spend-head">
+              <span>
+                {allSpendExpenses.length} transaction
+                {allSpendExpenses.length === 1 ? "" : "s"}
+              </span>
+              <strong>{formatINR(
+                allSpendExpenses.reduce((sum, e) => sum + e.amount, 0),
+              )}</strong>
             </div>
-          )}
-        </div>
-      )}
+            {allSpendExpenses.length === 0 ? (
+              <p className="muted empty-state">No transactions loaded for this period.</p>
+            ) : (
+              <div className="payment-list all-spend-list">
+                {allSpendExpenses.map((expense) => (
+                  <EditablePaymentItem
+                    key={expense.id}
+                    expense={expense}
+                    isOpen={editingExpenseId === expense.id}
+                    onToggle={() => toggleExpenseEdit(expense.id)}
+                    onCategorySelect={(cat) => updateExpenseCategory(expense, cat)}
+                    onDelete={() => void deleteExpense(expense)}
+                    onMakeIncome={() => void convertExpenseDirection(expense, "credit")}
+                    onMakeExpense={() => void convertExpenseDirection(expense, "debit")}
+                    disabled={categoryBusy}
+                    footer={ccFooter(expense)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="snapshot">
         <div>
